@@ -1,10 +1,10 @@
 # Livetrain
 
-A tool for simulating WMR trajectories
+A tool for generating, tuning, and simulating wheeled mobile robot trajectories. **Currently in heavy alpha.**
 
 ## Key features
 
-* Supports tank and mecanum drivetrains
+* Tank and mecanum drivetrain support
 * PIDVA tuning for spline following
 * Telemetry tracking for all measurable values
 * Noise simulation for all measurable values
