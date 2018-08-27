@@ -89,26 +89,26 @@ public class SimulationRenderer extends JPanel {
          Drivetrain dt = robot.drivetrain();
          int ybuffer = 0;
          
-         // Time telemetry
-         String[] telemetry = new String[] {
-             String.format(Locale.getDefault(), "Simulation time: %.4fs", Clock.simulationTime())
-         };
-         
-         g2d.setColor(AXES_COLOR);
-         drawTelemetry(g2d, telemetry, ybuffer);
-         ybuffer += telemetryLineHeight * (telemetry.length + 1);
-         
          // Warning telemetry
          ArrayList<String> warnings = new ArrayList<>();
          
          if (wrnSegmentRenderingProblem)
              warnings.add("Warning: One or more trajectory segments failed to render");
          
-         telemetry = warnings.toArray(new String[0]);
+         String[] telemetry = warnings.toArray(new String[0]);
          
          g2d.setColor(Color.RED);
          drawTelemetry(g2d, telemetry, ybuffer);
          ybuffer += telemetryLineHeight * (telemetry.length + 1) * (telemetry.length > 0 ? 1 : 0);
+         
+         // Time telemetry
+         telemetry = new String[] {
+             String.format(Locale.getDefault(), "Simulation time: %.4fs", Clock.simulationTime())
+         };
+         
+         g2d.setColor(AXES_COLOR);
+         drawTelemetry(g2d, telemetry, ybuffer);
+         ybuffer += telemetryLineHeight * (telemetry.length + 1);
          
          // Robot telemetry
          telemetry = new String[] {
@@ -169,8 +169,6 @@ public class SimulationRenderer extends JPanel {
                  Pose2D pose = p.poseAt(i);
                  int x = (int)(pose.x() * Simulation.pixelsPerUnit);
                  int y = panHeight - (int)(pose.y() * Simulation.pixelsPerUnit);
-                 
-                 System.out.println(arcLength + " " + x + " " + y);
 
                  if (lastx != -1)
                      g2d.drawLine(lastx, lasty, x, y);

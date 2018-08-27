@@ -61,7 +61,7 @@ public class Launcher {
         });
         
         // Simulation loop
-        while (true)
+        while (!Thread.currentThread().isInterrupted())
             sim.update();
    }
 }
