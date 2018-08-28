@@ -14,18 +14,20 @@ import elusive.trajectory.Trajectory;
 
 import java.util.ArrayList;
 
+/**
+ * Simulation manipulation interface
+ */
 public class SimulationUI extends javax.swing.JFrame {
-    private static SimulationUI instance;
-    private ArrayList<Pose2D> waypoints;
-    private Trajectory trajectory = null;
+    private volatile static SimulationUI instance;
+    private volatile ArrayList<Pose2D> waypoints;
+    private volatile Trajectory trajectory = null;
+    private volatile Simulation sim;
 
-    private SimulationUI() {
-        initComponents();
-        
-        // Set window icon
-        setIconImage(Launcher.PROGRAM_ICON.getImage());
-    }
+    private SimulationUI() { initComponents(); }
     
+    /**
+     * @return Singleton
+     */
     public static SimulationUI instance() {
         if (instance == null)
             instance = new SimulationUI();
@@ -33,6 +35,19 @@ public class SimulationUI extends javax.swing.JFrame {
         return instance;
     }
     
+    /**
+     * Designate the simulation associated with this interface
+     * 
+     * @param sim Simulation
+     */
+    public void attachSimulation(Simulation sim) {
+        this.sim = sim;
+        Log.add("Attached " + sim.toString() + " to " + toString());
+    }
+    
+    /**
+     * Build a trajectory according to the user's configuration and send it to the robot
+     */
     private void updateTrajectory() {
         // Update robot constraints
         updateMotionConstraints();
@@ -86,9 +101,12 @@ public class SimulationUI extends javax.swing.JFrame {
         }
         
         chkFollowPath.setEnabled(true);
-        Simulation.robot().follower().setTrajectory(trajectory);
+        sim.robot().follower().setTrajectory(trajectory);
     }
     
+    /**
+     * Update the robot's motion constraints
+     */
     private void updateMotionConstraints() {
         NumericEntryParser vp = new NumericEntryParser(0);
         NumericEntryParser ap = new NumericEntryParser(0);
@@ -105,10 +123,19 @@ public class SimulationUI extends javax.swing.JFrame {
         Simulation.robot().setMotionConstraints(v, a, j);
     }
     
+    /**
+     * @return Last built trajectory
+     */
     public Trajectory trajectory() { return trajectory; }
     
+    /**
+     * @return Last built set of knots
+     */
     public ArrayList<Pose2D> waypoints() { return waypoints; }
     
+    /**
+     * Set the default robot geometry
+     */
     public void registerDefaults() {
         // Default robot configuration
         Registry.edit(Registry.Entry.ROBOT_INIT_X, txtRobotInitialX);
@@ -899,10 +926,10 @@ public class SimulationUI extends javax.swing.JFrame {
         else
             Clock.timeBank += Clock.timestamp() - Clock.simEpoch;
         
-        for (Simulant obj : Simulation.instance().objects())
+        for (Simulant obj : sim.objects())
                 obj.resetTimestamp();
         
-        Simulation.instance().setRun(chkSimulationRun.isSelected());
+        sim.setRun(chkSimulationRun.isSelected());
         btAdvanceBy.setEnabled(!chkSimulationRun.isSelected());
     }//GEN-LAST:event_chkSimulationRunMouseClicked
 
@@ -1020,10 +1047,10 @@ public class SimulationUI extends javax.swing.JFrame {
         NumericEntryParser p = new NumericEntryParser(0);
         double time = p.parse(txtAdvanceBy.getText());
         
-        for (Simulant obj : Simulation.instance().objects())
+        for (Simulant obj : sim.objects())
                 obj.resetTimestamp();
         
-        Simulation.instance().advanceSim(time);
+        sim.advanceSim(time);
     }//GEN-LAST:event_btAdvanceByMouseClicked
 
     private void txtAdvanceByFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_txtAdvanceByFocusLost

@@ -9,17 +9,36 @@ import livetrain.Log;
 
 import java.util.Arrays;
 
+/**
+ * Calculates the drivetrain power updates that guide the robot along a trajectory
+ */
 public class TrajectoryFollower {
     private PIDFController headingController, lateralController, axialController;
-    private Trajectory trajectory;
+    private volatile Trajectory trajectory;
     private Pose2D pathPose, pathVelocity, pathAcceleration;
     
+    /**
+     * @return Target trajectory pose
+     */
     public Pose2D pathPose() { return pathPose; }
     
+    /**
+     * @return Target path velocity
+     */
     public Pose2D pathVelocity() { return pathVelocity; }
     
+    /**
+     * @return Target path acceleration
+     */
     public Pose2D pathAcceleration() { return pathAcceleration; }
 
+    /**
+     * Configure the PIDVA controllers
+     * 
+     * @param heading Heading controller coefficients
+     * @param lateral Lateral controller coefficients
+     * @param axial Axial controller coefficients
+     */
     public void setCoefficients(double[] heading, double[] lateral, double[] axial) {
         if (heading.length != 6 || lateral.length != 6 || axial.length != 6)
             throw new IllegalArgumentException("Coefficient sets must be 6 in length");
@@ -34,12 +53,24 @@ public class TrajectoryFollower {
         Log.add("Set TrajectoryFollower controller coefficients", Arrays.toString(heading), Arrays.toString(lateral), Arrays.toString(axial));
     }
 
+    /**
+     * Set the trajectory to follow
+     * 
+     * @param t Trajectory
+     */
     public void setTrajectory(Trajectory t) {
         trajectory = t;
         Log.add("Set TrajectoryFollower.trajectory", trajectory.toString(), "Motion profile", trajectory.profile().toString());
     }
     
-    public double[] update(Pose2D estimatedPose, double t) {
+    /**
+     * Run a single update cycle
+     * 
+     * @param estimatedPose Where the robot thinks it is
+     * @param t Simulation time
+     * @return Drivetrain powers
+     */
+    public synchronized double[] update(Pose2D estimatedPose, double t) {
         Log.add("Trajectory follower update @ t=" + t);
         
         pathPose = trajectory.poseAtTime(t);

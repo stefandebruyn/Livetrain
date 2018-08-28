@@ -4,6 +4,10 @@ import livetrain.ui.NumericEntryParser;
 
 import javax.swing.JTextField;
 
+/**
+ * Serves to synchronize primitives between the interface and the simulation, which exist in the
+ * same thread
+ */
 public class Registry {
     public enum Entry {
         ROBOT_INIT_X, ROBOT_INIT_Y, ROBOT_INIT_THETA, ROBOT_WIDTH, ROBOT_HEIGHT,
@@ -13,6 +17,10 @@ public class Registry {
     
     private Registry() {}
     
+    /**
+     * @param ent Entry
+     * @param src Source field
+     */
     public static void edit(Entry ent, JTextField src) {
         NumericEntryParser p;
         double n = Double.NaN;

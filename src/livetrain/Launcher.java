@@ -1,22 +1,30 @@
 package livetrain;
 
+import livetrain.Log;
 import livetrain.graphics.SimulationRenderer;
 import livetrain.ui.SimulationUI;
 
+import java.awt.EventQueue;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
+/**
+ * Boots the program by creating all threads
+ */
 public class Launcher {
     public static final String WINDOW_NAME = "Livetrain";
     public static final ImageIcon PROGRAM_ICON = new ImageIcon(Launcher.class.getResource("/image/icon.png"));
+    public static final Simulation sim = Simulation.instance();
     
     private Launcher() {}
     
+    /**
+     * Entry point
+     * 
+     * @param args 
+     */
     public static void main(String[] args) {
-        // Create the simulation
-        Simulation sim = Simulation.instance();
-        
         // Set UI theme
         try {
             for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
@@ -35,24 +43,22 @@ public class Launcher {
             java.util.logging.Logger.getLogger(SimulationUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
         }
         
-        // Create the UI
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                SimulationUI.instance().setVisible(true);
-            }
-        });
-        
-        // Create the simulation window
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
+        // Graphics and interface get placed in the same thread
+        EventQueue.invokeLater(new Runnable() {
+            @Override public void run() {
+                // Interface
+                SimulationUI ui = SimulationUI.instance();
+                ui.setVisible(true);
+                ui.attachSimulation(sim);
+                ui.setIconImage(Launcher.PROGRAM_ICON.getImage());
+                
+                // Renderer
                 JFrame frame = new JFrame(WINDOW_NAME);
                 frame.setContentPane(SimulationRenderer.instance());
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 frame.pack();
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
-                
-                // Set simulation window icon
                 frame.setIconImage(Launcher.PROGRAM_ICON.getImage());
                 
                 // Establish default configuration

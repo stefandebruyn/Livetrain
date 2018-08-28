@@ -19,26 +19,33 @@ import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.Locale;
 import javax.swing.JPanel;
-import livetrain.Launcher;
 
+/**
+ * Handles the graphics that appear in the simulation window
+ */
 public class SimulationRenderer extends JPanel {
-    private static SimulationRenderer instance = null;
-    public static final int CANVAS_WIDTH = 640;
-    public static final int CANVAS_HEIGHT = 480;
     public static final Color BACKGROUND_COLOR = new Color(8, 8, 8);
     public static final Color GRID_COLOR = new Color(15, 15, 15);
     public static final Color AXES_COLOR = new Color(100, 100, 100);
     public static final Color PATH_COLOR = new Color(73, 75, 209);
     public static final double MAX_ARC_LENGTH = 10000;
+    public static final int CANVAS_WIDTH = 640;
+    public static final int CANVAS_HEIGHT = 480;
+    
+    private static volatile SimulationRenderer instance = null;
     private int axisTickSize = 5;
     private int telemetryLineHeight = 13;
-    
     private boolean wrnSegmentRenderingProblem = false;
     
     private SimulationRenderer() {
         setPreferredSize(new Dimension(CANVAS_WIDTH, CANVAS_HEIGHT));
     }
 
+    /**
+     * Repeated rendering method
+     * 
+     * @param g Graphics surface
+     */
     @Override public void paintComponent(Graphics g) {
         Graphics2D g2d = (Graphics2D)g;
 
@@ -112,12 +119,15 @@ public class SimulationRenderer extends JPanel {
          
          // Robot telemetry
          telemetry = new String[] {
-             String.format(Locale.getDefault(), "Robot pose: <%.2f, %.2f, %.2f°>", robot.xState.x, robot.yState.x, Math.toDegrees(robot.thetaState.x)),
-             String.format(Locale.getDefault(), "Robot velocity: <%.2f, %.2f, %.2f °/s>", robot.xState.v, robot.yState.v, Math.toDegrees(robot.thetaState.v)),
-             String.format(Locale.getDefault(), "Drivetrain powers: {%.2f, %.2f, %.2f, %.2f}", dt.power(0), dt.power(1), dt.power(2), dt.power(3)),
+             String.format(Locale.getDefault(), "Robot pose: <%.2f, %.2f, %.2f°>", robot.xState.x,
+                     robot.yState.x, Math.toDegrees(robot.thetaState.x)),
+             String.format(Locale.getDefault(), "Robot velocity: <%.2f, %.2f, %.2f °/s>",
+                     robot.xState.v, robot.yState.v, Math.toDegrees(robot.thetaState.v)),
+             String.format(Locale.getDefault(), "Drivetrain powers: {%.2f, %.2f, %.2f, %.2f}",
+                     dt.power(0), dt.power(1), dt.power(2), dt.power(3)),
          };
     
-         g2d.setColor(Robot.color);
+         g2d.setColor(Simulation.robot().color());
          drawTelemetry(g2d, telemetry, ybuffer);
          ybuffer += telemetryLineHeight * (telemetry.length + 1);
          
@@ -134,24 +144,36 @@ public class SimulationRenderer extends JPanel {
          repaint();
     }
 
+    /**
+     * Draw a series of waypoints to a surface
+     * 
+     * @param g2d Graphics surface
+     * @param waypoints Waypoints
+     */
     private void drawWaypoints(Graphics2D g2d, ArrayList<Pose2D> waypoints) {
         g2d.setColor(PATH_COLOR);
         
         int diam = 5;
         int offset = (int)(diam / 2);
-        int panHeight = Simulation.instance().renderer().getHeight();
+        int panHeight = getHeight();
         
         for (Pose2D pose : waypoints)
             g2d.fillOval((int)(pose.x() * Simulation.pixelsPerUnit) - offset, panHeight - (int)(pose.y() * Simulation.pixelsPerUnit) - offset, diam, diam);
     }
 
+    /**
+     * Draw a trajectory to a surface
+     * 
+     * @param g2d Graphics surface
+     * @param traj Trajectory
+     */
     private void drawTrajectory(Graphics2D g2d, Trajectory traj) {
         if (traj == null)
             return;
         
          g2d.setColor(PATH_COLOR);
          
-         int panHeight = Simulation.instance().renderer().getHeight();
+         int panHeight = getHeight();
          int failedRenders = 0;
 
          for (Parametric p : traj.segments()) {
@@ -184,6 +206,13 @@ public class SimulationRenderer extends JPanel {
          wrnSegmentRenderingProblem = (failedRenders > 0);
     }
 
+    /**
+     * Draw lines of telemetry to a surface
+     * 
+     * @param g2d Graphics surface
+     * @param telemetry Data
+     * @param starty Vertical position of topmost line
+     */
     private void drawTelemetry(Graphics2D g2d, String[] telemetry, int starty) {
         for (int i = 0; i < telemetry.length; i++) {
             String str = telemetry[i];
@@ -194,6 +223,9 @@ public class SimulationRenderer extends JPanel {
         }
     }
 
+    /**
+     * @return Singleton
+     */
     public static SimulationRenderer instance() {
         if (instance == null)
             instance = new SimulationRenderer();
