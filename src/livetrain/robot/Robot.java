@@ -7,11 +7,13 @@ import elusive.profiling.motion.MotionConstraints;
 import livetrain.Log;
 import livetrain.Simulation;
 import livetrain.graphics.SimulationRenderer;
+import livetrain.noise.NoiseGenerator;
 import livetrain.physics.Simulant;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.util.Arrays;
+import livetrain.Util;
 
 /**
  * A combined drivetrain, follower, and trajectory
@@ -21,6 +23,7 @@ public class Robot extends Simulant {
     private Drivetrain drivetrain;
     private TrajectoryFollower follower;
     private MotionConstraints constraints;
+    private Pose2D estimatedPose, actualPose, noisePose = new Pose2D(0, 0, 0);
     private double width, height, updateFrequency = 100;
     private boolean isFollowingTrajectory = true;
 
@@ -35,6 +38,21 @@ public class Robot extends Simulant {
         follower = new TrajectoryFollower();
         constraints = new MotionConstraints(0, 0, 0);
     }
+    
+    /**
+     * @return Pose including noise
+     */
+    public Pose2D estimatedPose() { return estimatedPose; }
+    
+    /**
+     * @return Pose excluding noise
+     */
+    public Pose2D actualPose() { return actualPose; }
+    
+    /**
+     * @return Static noise
+     */
+    public Pose2D noisePose() { return noisePose; }
     
     /**
      * @return Color for rendering
@@ -134,6 +152,14 @@ public class Robot extends Simulant {
         yState.j = 0;
         thetaState.j = 0;
     }
+    
+    /**
+     * Reset the last update timestamp and also clear the additive noise
+     */
+    @Override public void resetTimestamp() {
+        super.resetTimestamp();
+        noisePose = new Pose2D(0, 0, 0);
+    }
 
     /**
      * Run a single update cycle. Follower is prompted for an update, the update is passed into
@@ -143,12 +169,26 @@ public class Robot extends Simulant {
      */
     @Override public void update(double timestamp) {
         // Follow the trajectory
-        if (isFollowingTrajectory && (lastUpdateTimestamp == -1 || timestamp - lastUpdateTimestamp >= 1 / updateFrequency)) {
+        if (isFollowingTrajectory && (lastUpdateTimestamp == -1 || timestamp - lastUpdateTimestamp
+                >= 1 / updateFrequency)) {
+            // True state
             Pose2D currentPose = new Pose2D(xState.x, yState.x, thetaState.x);
-            double[] powers = follower.update(currentPose, timestamp);
+            actualPose = currentPose;
+            
+            // Additive noise
+            noisePose = NoiseGenerator.generate(NoiseGenerator.Type.ROBOT_POSE_ADD, timestamp, noisePose);
+            currentPose = Util.poseSum(currentPose, noisePose);
+            
+            // Static noise
+            currentPose = NoiseGenerator.generate(NoiseGenerator.Type.ROBOT_POSE_STATIC, timestamp, currentPose);
+            estimatedPose = currentPose;
+            
+            // Get drivetrain update
+            double[] powers = follower.update(estimatedPose, timestamp);
             drivetrain.setPowers(powers[0], powers[1], powers[2], powers[3]);
             Log.append("Drivetrain powers", Arrays.toString(powers));
-        }
+        } else
+            Log.add("Queried follower, query denied");
         
         // Update the state
         Pose2D dtPose = drivetrain.state();
@@ -181,7 +221,6 @@ public class Robot extends Simulant {
         surface.setColor(color);
         surface.rotate(-pose.heading(), xpx + wpx / 2, ypx + hpx / 2);
         surface.drawRect(xpx, ypx, (int)wpx, (int)hpx);
-        surface.setColor(new Color(255 - color.getRed(), 255 - color.getGreen(), 255 - color.getBlue()));
         surface.drawLine(xpx + (int)(wpx / 2), ypx + (int)(hpx / 2), xpx + (int)(wpx * 1.66), ypx + (int)(hpx / 2));
         surface.dispose();
         

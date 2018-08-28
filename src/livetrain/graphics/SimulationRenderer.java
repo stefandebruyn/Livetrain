@@ -5,6 +5,7 @@ import elusive.geometry.Pose2D;
 import elusive.trajectory.Trajectory;
 
 import livetrain.Clock;
+import livetrain.Util;
 import livetrain.Simulation;
 import livetrain.physics.Simulant;
 import livetrain.robot.Drivetrain;
@@ -27,10 +28,12 @@ public class SimulationRenderer extends JPanel {
     public static final Color BACKGROUND_COLOR = new Color(8, 8, 8);
     public static final Color GRID_COLOR = new Color(15, 15, 15);
     public static final Color AXES_COLOR = new Color(100, 100, 100);
-    public static final Color PATH_COLOR = new Color(73, 75, 209);
+    public static final Color PATH_COLOR = new Color(129, 196, 252);
+    public static final Color NOISE_COLOR = new Color(252, 249, 222);
     public static final double MAX_ARC_LENGTH = 10000;
-    public static final int CANVAS_WIDTH = 640;
-    public static final int CANVAS_HEIGHT = 480;
+    public static final double INITIAL_ASPECT_RATIO = 16 / 9.0;
+    public static final int CANVAS_HEIGHT = 563;
+    public static final int CANVAS_WIDTH = (int)(CANVAS_HEIGHT * INITIAL_ASPECT_RATIO);
     
     private static volatile SimulationRenderer instance = null;
     private int axisTickSize = 5;
@@ -140,6 +143,17 @@ public class SimulationRenderer extends JPanel {
          
          g2d.setColor(PATH_COLOR);
          drawTelemetry(g2d, telemetry, ybuffer);
+         ybuffer += telemetryLineHeight * (telemetry.length + 1);
+         
+         // Noise telemetry
+         telemetry = new String[] {
+             "Robot estimated pose: " + robot.estimatedPose(),
+             "Robot pose error: " + Util.poseDifference(robot.actualPose(), robot.estimatedPose()),
+             "Robot pose static noise: " + robot.noisePose()
+         };
+         
+         g2d.setColor(NOISE_COLOR);
+         drawTelemetry(g2d, telemetry, ybuffer);
 
          repaint();
     }
@@ -158,7 +172,8 @@ public class SimulationRenderer extends JPanel {
         int panHeight = getHeight();
         
         for (Pose2D pose : waypoints)
-            g2d.fillOval((int)(pose.x() * Simulation.pixelsPerUnit) - offset, panHeight - (int)(pose.y() * Simulation.pixelsPerUnit) - offset, diam, diam);
+            g2d.fillOval((int)(pose.x() * Simulation.pixelsPerUnit) - offset, panHeight -
+                    (int)(pose.y() * Simulation.pixelsPerUnit) - offset, diam, diam);
     }
 
     /**
@@ -200,7 +215,8 @@ public class SimulationRenderer extends JPanel {
              }
              
              Pose2D end = p.poseAt(arcLength);
-             g2d.drawLine(lastx, lasty, (int)(end.x() * Simulation.pixelsPerUnit), panHeight - (int)(end.y() * Simulation.pixelsPerUnit));
+             g2d.drawLine(lastx, lasty, (int)(end.x() * Simulation.pixelsPerUnit), panHeight -
+                     (int)(end.y() * Simulation.pixelsPerUnit));
          }
          
          wrnSegmentRenderingProblem = (failedRenders > 0);

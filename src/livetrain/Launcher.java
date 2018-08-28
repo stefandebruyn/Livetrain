@@ -15,7 +15,7 @@ import javax.swing.SwingUtilities;
 public class Launcher {
     public static final String WINDOW_NAME = "Livetrain";
     public static final ImageIcon PROGRAM_ICON = new ImageIcon(Launcher.class.getResource("/image/icon.png"));
-    public static final Simulation sim = Simulation.instance();
+    public volatile static Simulation sim = Simulation.instance();
     
     private Launcher() {}
     

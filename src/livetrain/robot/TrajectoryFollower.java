@@ -50,7 +50,8 @@ public class TrajectoryFollower {
         axialController = new PIDFController(axial[0], axial[1], axial[2],
                 axial[3], axial[4], axial[5]);
         
-        Log.add("Set TrajectoryFollower controller coefficients", Arrays.toString(heading), Arrays.toString(lateral), Arrays.toString(axial));
+        Log.add("Set TrajectoryFollower controller coefficients", Arrays.toString(heading),
+                Arrays.toString(lateral), Arrays.toString(axial));
     }
 
     /**
@@ -60,7 +61,8 @@ public class TrajectoryFollower {
      */
     public void setTrajectory(Trajectory t) {
         trajectory = t;
-        Log.add("Set TrajectoryFollower.trajectory", trajectory.toString(), "Motion profile", trajectory.profile().toString());
+        Log.add("Set TrajectoryFollower.trajectory", trajectory.toString(), "Motion profile",
+                trajectory.profile().toString());
     }
     
     /**
@@ -77,7 +79,8 @@ public class TrajectoryFollower {
         pathVelocity = trajectory.velocityAtTime(t);
         pathAcceleration = trajectory.accelerationAtTime(t);
         
-        Log.append("Trajectory poses", "p=" + pathPose.toString(), "v=" + pathVelocity.toString(), "a=" + pathAcceleration.toString());
+        Log.append("Trajectory poses", "p=" + pathPose.toString(), "v=" + pathVelocity.toString(),
+                "a=" + pathAcceleration.toString());
         
         double headingError = estimatedPose.heading() - pathPose.heading();
         double headingUpdate = headingController.update(headingError, t);
@@ -98,8 +101,10 @@ public class TrajectoryFollower {
         Vector2D robotAcceleration = new Vector2D(pathAcceleration.x(), pathAcceleration.y());
         robotAcceleration = robotAcceleration.rotated(-estimatedPose.heading());
         
-        double axialUpdate = axialController.update(axialError, t, robotVelocity.x(), robotAcceleration.x());
-        double lateralUpdate = lateralController.update(lateralError, t, robotVelocity.y(), robotAcceleration.y());
+        double axialUpdate = axialController.update(axialError, t, robotVelocity.x(),
+                robotAcceleration.x());
+        double lateralUpdate = lateralController.update(lateralError, t, robotVelocity.y(),
+                robotAcceleration.y());
         
         Log.append("upd_axial=" + axialUpdate, "upd_lateral=" + lateralUpdate);
         

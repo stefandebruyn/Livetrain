@@ -1,10 +1,10 @@
 package livetrain.ui;
 
 import livetrain.Clock;
-import livetrain.Launcher;
 import livetrain.Log;
 import livetrain.Registry;
 import livetrain.Simulation;
+import livetrain.noise.NoiseGenerator;
 import livetrain.physics.Simulant;
 
 import elusive.geometry.Pose2D;
@@ -13,6 +13,7 @@ import elusive.trajectory.TrajectoryBuilder;
 import elusive.trajectory.Trajectory;
 
 import java.util.ArrayList;
+import livetrain.noise.Noise;
 
 /**
  * Simulation manipulation interface
@@ -23,7 +24,10 @@ public class SimulationUI extends javax.swing.JFrame {
     private volatile Trajectory trajectory = null;
     private volatile Simulation sim;
 
-    private SimulationUI() { initComponents(); }
+    private SimulationUI() {
+        initComponents();
+        chkAddNoiseStateChanged(null);
+    }
     
     /**
      * @return Singleton
@@ -124,6 +128,39 @@ public class SimulationUI extends javax.swing.JFrame {
     }
     
     /**
+     * Update the noise generator
+     */
+    private void updateNoise() {
+        // Robot pose static noise
+        NumericEntryParser lower = new NumericEntryParser(0);
+        NumericEntryParser upper = new NumericEntryParser(0);
+        
+        Noise.Type t = boxBotPoseStatNoiseType.getSelectedItem().equals("Sinusoidal") ?
+                Noise.Type.SINUSOIDAL : Noise.Type.RANDOM;
+        double l = lower.parse(txtBotPoseStatNoiseLower.getText());
+        double u = upper.parse(txtBotPoseStatNoiseUpper.getText());
+        
+        txtBotPoseStatNoiseLower.setText("" + l);
+        txtBotPoseStatNoiseUpper.setText("" + u);
+        
+        NoiseGenerator.setRobotPoseStatic(t, l, u);
+        
+        // Robot pose additive noise
+        lower = new NumericEntryParser(0);
+        upper = new NumericEntryParser(0);
+        
+        t = boxBotPoseAddNoiseType.getSelectedItem().equals("Sinusoidal") ?
+                Noise.Type.SINUSOIDAL : Noise.Type.RANDOM;
+        l = lower.parse(txtBotPoseAddNoiseLower.getText());
+        u = upper.parse(txtBotPoseAddNoiseUpper.getText());
+        
+        txtBotPoseAddNoiseLower.setText("" + l);
+        txtBotPoseAddNoiseUpper.setText("" + u);
+        
+        NoiseGenerator.setRobotPoseAdd(t, l, u);
+    }
+    
+    /**
      * @return Last built trajectory
      */
     public Trajectory trajectory() { return trajectory; }
@@ -213,6 +250,21 @@ public class SimulationUI extends javax.swing.JFrame {
         labUpdateFrequency = new javax.swing.JLabel();
         labUpdateFrequencyUnit = new javax.swing.JLabel();
         panNoiseTab = new javax.swing.JPanel();
+        chkAddNoise = new javax.swing.JCheckBox();
+        panRobotPoseNoise = new javax.swing.JPanel();
+        boxBotPoseStatNoiseType = new javax.swing.JComboBox<>();
+        txtBotPoseStatNoiseLower = new javax.swing.JTextField();
+        labBotPoseStatNoiseType = new javax.swing.JLabel();
+        labBotPoseStatNoiseLower = new javax.swing.JLabel();
+        labBotPoseStatNoiseUpper = new javax.swing.JLabel();
+        txtBotPoseStatNoiseUpper = new javax.swing.JTextField();
+        panTargetPoseNoise = new javax.swing.JPanel();
+        boxBotPoseAddNoiseType = new javax.swing.JComboBox<>();
+        txtBotPoseAddNoiseLower = new javax.swing.JTextField();
+        labBotPoseAddNoiseType = new javax.swing.JLabel();
+        labBotPoseAddNoiseLower = new javax.swing.JLabel();
+        labBotPoseAddNoiseUpper = new javax.swing.JLabel();
+        txtBotPoseAddNoiseUpper = new javax.swing.JTextField();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setResizable(false);
@@ -863,7 +915,7 @@ public class SimulationUI extends javax.swing.JFrame {
                     .addComponent(panKnots, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addGroup(panTrajectoryTabLayout.createSequentialGroup()
                         .addGap(6, 6, 6)
-                        .addGroup(panTrajectoryTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                        .addGroup(panTrajectoryTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                             .addComponent(labProfileType)
                             .addComponent(labPathType))
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
@@ -893,15 +945,167 @@ public class SimulationUI extends javax.swing.JFrame {
 
         tabParent.addTab("Trajectory", panTrajectoryTab);
 
+        chkAddNoise.setText("Add noise");
+        chkAddNoise.addChangeListener(new javax.swing.event.ChangeListener() {
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                chkAddNoiseStateChanged(evt);
+            }
+        });
+
+        panRobotPoseNoise.setBorder(javax.swing.BorderFactory.createTitledBorder("Robot pose static noise"));
+
+        boxBotPoseStatNoiseType.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Sinusoidal", "Random" }));
+        boxBotPoseStatNoiseType.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                boxBotPoseStatNoiseTypeItemStateChanged(evt);
+            }
+        });
+
+        txtBotPoseStatNoiseLower.setText("0.0");
+        txtBotPoseStatNoiseLower.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                txtBotPoseStatNoiseLowerFocusLost(evt);
+            }
+        });
+
+        labBotPoseStatNoiseType.setText("Type");
+
+        labBotPoseStatNoiseLower.setText("Lower");
+
+        labBotPoseStatNoiseUpper.setText("Upper");
+
+        txtBotPoseStatNoiseUpper.setText("0.0");
+        txtBotPoseStatNoiseUpper.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                txtBotPoseStatNoiseUpperFocusLost(evt);
+            }
+        });
+
+        javax.swing.GroupLayout panRobotPoseNoiseLayout = new javax.swing.GroupLayout(panRobotPoseNoise);
+        panRobotPoseNoise.setLayout(panRobotPoseNoiseLayout);
+        panRobotPoseNoiseLayout.setHorizontalGroup(
+            panRobotPoseNoiseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panRobotPoseNoiseLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(panRobotPoseNoiseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(labBotPoseStatNoiseType)
+                    .addComponent(labBotPoseStatNoiseLower))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(panRobotPoseNoiseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(panRobotPoseNoiseLayout.createSequentialGroup()
+                        .addComponent(txtBotPoseStatNoiseLower, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(labBotPoseStatNoiseUpper)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(txtBotPoseStatNoiseUpper, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(boxBotPoseStatNoiseType, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(67, Short.MAX_VALUE))
+        );
+        panRobotPoseNoiseLayout.setVerticalGroup(
+            panRobotPoseNoiseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panRobotPoseNoiseLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(panRobotPoseNoiseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(boxBotPoseStatNoiseType, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(labBotPoseStatNoiseType))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(panRobotPoseNoiseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(txtBotPoseStatNoiseLower, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(labBotPoseStatNoiseLower)
+                    .addComponent(txtBotPoseStatNoiseUpper, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(labBotPoseStatNoiseUpper))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
+        panTargetPoseNoise.setBorder(javax.swing.BorderFactory.createTitledBorder("Robot pose cumulative noise"));
+
+        boxBotPoseAddNoiseType.setModel(new javax.swing.DefaultComboBoxModel<>(new String[] { "Sinusoidal", "Random" }));
+        boxBotPoseAddNoiseType.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                boxBotPoseAddNoiseTypeItemStateChanged(evt);
+            }
+        });
+
+        txtBotPoseAddNoiseLower.setText("0.0");
+        txtBotPoseAddNoiseLower.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                txtBotPoseAddNoiseLowerFocusLost(evt);
+            }
+        });
+
+        labBotPoseAddNoiseType.setText("Type");
+
+        labBotPoseAddNoiseLower.setText("Lower");
+
+        labBotPoseAddNoiseUpper.setText("Upper");
+
+        txtBotPoseAddNoiseUpper.setText("0.0");
+        txtBotPoseAddNoiseUpper.addFocusListener(new java.awt.event.FocusAdapter() {
+            public void focusLost(java.awt.event.FocusEvent evt) {
+                txtBotPoseAddNoiseUpperFocusLost(evt);
+            }
+        });
+
+        javax.swing.GroupLayout panTargetPoseNoiseLayout = new javax.swing.GroupLayout(panTargetPoseNoise);
+        panTargetPoseNoise.setLayout(panTargetPoseNoiseLayout);
+        panTargetPoseNoiseLayout.setHorizontalGroup(
+            panTargetPoseNoiseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panTargetPoseNoiseLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(panTargetPoseNoiseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addComponent(labBotPoseAddNoiseType)
+                    .addComponent(labBotPoseAddNoiseLower))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addGroup(panTargetPoseNoiseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(panTargetPoseNoiseLayout.createSequentialGroup()
+                        .addComponent(txtBotPoseAddNoiseLower, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(18, 18, 18)
+                        .addComponent(labBotPoseAddNoiseUpper)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                        .addComponent(txtBotPoseAddNoiseUpper, javax.swing.GroupLayout.PREFERRED_SIZE, 39, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(boxBotPoseAddNoiseType, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(67, Short.MAX_VALUE))
+        );
+        panTargetPoseNoiseLayout.setVerticalGroup(
+            panTargetPoseNoiseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(panTargetPoseNoiseLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(panTargetPoseNoiseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(boxBotPoseAddNoiseType, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(labBotPoseAddNoiseType))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(panTargetPoseNoiseLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(txtBotPoseAddNoiseLower, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(labBotPoseAddNoiseLower)
+                    .addComponent(txtBotPoseAddNoiseUpper, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(labBotPoseAddNoiseUpper))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
+
         javax.swing.GroupLayout panNoiseTabLayout = new javax.swing.GroupLayout(panNoiseTab);
         panNoiseTab.setLayout(panNoiseTabLayout);
         panNoiseTabLayout.setHorizontalGroup(
             panNoiseTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 283, Short.MAX_VALUE)
+            .addGroup(panNoiseTabLayout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(panNoiseTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                    .addGroup(panNoiseTabLayout.createSequentialGroup()
+                        .addComponent(chkAddNoise)
+                        .addGap(0, 0, Short.MAX_VALUE))
+                    .addComponent(panRobotPoseNoise, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                    .addComponent(panTargetPoseNoise, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                .addContainerGap())
         );
         panNoiseTabLayout.setVerticalGroup(
             panNoiseTabLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 563, Short.MAX_VALUE)
+            .addGroup(panNoiseTabLayout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(chkAddNoise)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(panRobotPoseNoise, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(panTargetPoseNoise, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addContainerGap(333, Short.MAX_VALUE))
         );
 
         tabParent.addTab("Noise", panNoiseTab);
@@ -1059,15 +1263,52 @@ public class SimulationUI extends javax.swing.JFrame {
         txtAdvanceBy.setText("" + time);
     }//GEN-LAST:event_txtAdvanceByFocusLost
 
+    private void boxBotPoseStatNoiseTypeItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_boxBotPoseStatNoiseTypeItemStateChanged
+        updateNoise();
+    }//GEN-LAST:event_boxBotPoseStatNoiseTypeItemStateChanged
+
+    private void txtBotPoseStatNoiseLowerFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_txtBotPoseStatNoiseLowerFocusLost
+        updateNoise();
+    }//GEN-LAST:event_txtBotPoseStatNoiseLowerFocusLost
+
+    private void txtBotPoseStatNoiseUpperFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_txtBotPoseStatNoiseUpperFocusLost
+        updateNoise();
+    }//GEN-LAST:event_txtBotPoseStatNoiseUpperFocusLost
+
+    private void boxBotPoseAddNoiseTypeItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_boxBotPoseAddNoiseTypeItemStateChanged
+        updateNoise();
+    }//GEN-LAST:event_boxBotPoseAddNoiseTypeItemStateChanged
+
+    private void txtBotPoseAddNoiseLowerFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_txtBotPoseAddNoiseLowerFocusLost
+        updateNoise();
+    }//GEN-LAST:event_txtBotPoseAddNoiseLowerFocusLost
+
+    private void txtBotPoseAddNoiseUpperFocusLost(java.awt.event.FocusEvent evt) {//GEN-FIRST:event_txtBotPoseAddNoiseUpperFocusLost
+        updateNoise();
+    }//GEN-LAST:event_txtBotPoseAddNoiseUpperFocusLost
+
+    private void chkAddNoiseStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_chkAddNoiseStateChanged
+        NoiseGenerator.setAddNoise(chkAddNoise.isSelected());
+    }//GEN-LAST:event_chkAddNoiseStateChanged
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JComboBox<String> boxBotPoseAddNoiseType;
+    private javax.swing.JComboBox<String> boxBotPoseStatNoiseType;
     private javax.swing.JComboBox<String> boxDrivetrainType;
     private javax.swing.JComboBox<String> boxPathType;
     private javax.swing.JComboBox<String> boxProfileType;
     private javax.swing.JButton btAdvanceBy;
     private javax.swing.JButton btSimulationReset;
+    private javax.swing.JCheckBox chkAddNoise;
     private javax.swing.JCheckBox chkFollowPath;
     private javax.swing.JCheckBox chkSimulationRun;
     private javax.swing.JLabel labAdvanceByUnit;
+    private javax.swing.JLabel labBotPoseAddNoiseLower;
+    private javax.swing.JLabel labBotPoseAddNoiseType;
+    private javax.swing.JLabel labBotPoseAddNoiseUpper;
+    private javax.swing.JLabel labBotPoseStatNoiseLower;
+    private javax.swing.JLabel labBotPoseStatNoiseType;
+    private javax.swing.JLabel labBotPoseStatNoiseUpper;
     private javax.swing.JLabel labInitPow0;
     private javax.swing.JLabel labInitPow1;
     private javax.swing.JLabel labInitPow2;
@@ -1090,8 +1331,10 @@ public class SimulationUI extends javax.swing.JFrame {
     private javax.swing.JPanel panKnots;
     private javax.swing.JPanel panNoiseTab;
     private javax.swing.JPanel panRobot;
+    private javax.swing.JPanel panRobotPoseNoise;
     private javax.swing.JPanel panSimulation;
     private javax.swing.JPanel panSimulationTab;
+    private javax.swing.JPanel panTargetPoseNoise;
     private javax.swing.JPanel panTrajectoryTab;
     private javax.swing.JScrollPane scrKnotTable;
     private javax.swing.JSlider sldSimulationSpeed;
@@ -1101,6 +1344,10 @@ public class SimulationUI extends javax.swing.JFrame {
     private javax.swing.JTable tblCoefficients;
     private javax.swing.JTable tblKnots;
     private javax.swing.JTextField txtAdvanceBy;
+    private javax.swing.JTextField txtBotPoseAddNoiseLower;
+    private javax.swing.JTextField txtBotPoseAddNoiseUpper;
+    private javax.swing.JTextField txtBotPoseStatNoiseLower;
+    private javax.swing.JTextField txtBotPoseStatNoiseUpper;
     private javax.swing.JTextField txtMaxAcceleration;
     private javax.swing.JTextField txtMaxJerk;
     private javax.swing.JTextField txtMaxVelocity;

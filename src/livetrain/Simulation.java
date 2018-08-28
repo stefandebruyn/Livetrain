@@ -1,6 +1,5 @@
 package livetrain;
 
-import livetrain.graphics.SimulationRenderer;
 import livetrain.physics.Simulant;
 import livetrain.robot.Robot;
 
